@@ -23,10 +23,12 @@ export default interface Order {
     orderAmountAsInteger: number;
     orderId: number;
     shippingCostTotal: number;
+    shippingCostTotalAsInteger?: number;
     shippingCostBeforeDiscount: number;
     handlingCostTotal: number;
     taxes: Tax[];
     taxTotal: number;
+    taxTotalAsInteger?: number;
     payments?: OrderPayments;
     status: string;
 }
