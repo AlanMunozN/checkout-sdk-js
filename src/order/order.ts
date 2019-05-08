@@ -14,6 +14,7 @@ export default interface Order {
     customerId: number;
     customerMessage: string;
     discountAmount: number;
+    discountAmountAsInteger: number;
     hasDigitalItems: boolean;
     isComplete: boolean;
     isDownloadable: boolean;

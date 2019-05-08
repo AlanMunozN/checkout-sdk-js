@@ -198,14 +198,15 @@ export default class AffirmPaymentStrategy implements PaymentStrategy {
 
     private _getItems(): AffirmItem[] {
         const state = this._store.getState();
-        const cart = state.cart.getCart();
+        const order = state.order.getOrder();
 
-        if (!cart) {
-            throw new MissingDataError(MissingDataErrorType.MissingCart);
+        if (!order) {
+            throw new MissingDataError(MissingDataErrorType.MissingCheckout);
         }
+
         const items: AffirmItem[] = [];
 
-        for (const item of cart.lineItems.physicalItems) {
+        for (const item of order.lineItems.physicalItems) {
             items.push({
                 display_name: item.name,
                 sku: item.sku,
@@ -216,7 +217,7 @@ export default class AffirmPaymentStrategy implements PaymentStrategy {
             });
         }
 
-        for (const item of cart.lineItems.digitalItems) {
+        for (const item of order.lineItems.digitalItems) {
             items.push({
                 display_name: item.name,
                 sku: item.sku,
@@ -227,8 +228,8 @@ export default class AffirmPaymentStrategy implements PaymentStrategy {
             });
         }
 
-        if (cart.lineItems.customItems) {
-            for (const item of cart.lineItems.customItems) {
+        if (order.lineItems.customItems) {
+            for (const item of order.lineItems.customItems) {
                 items.push({
                     display_name: item.name,
                     sku: item.sku,
@@ -240,7 +241,7 @@ export default class AffirmPaymentStrategy implements PaymentStrategy {
             }
         }
 
-        for (const item of cart.lineItems.giftCertificates) {
+        for (const item of order.lineItems.giftCertificates) {
             items.push({
                 display_name: item.name,
                 sku: '',
@@ -256,15 +257,15 @@ export default class AffirmPaymentStrategy implements PaymentStrategy {
 
     private _getDiscounts(): AffirmDiscount {
         const state = this._store.getState();
-        const cart = state.cart.getCart();
+        const order = state.order.getOrder();
 
-        if (!cart) {
-            throw new MissingDataError(MissingDataErrorType.MissingCart);
+        if (!order) {
+            throw new MissingDataError(MissingDataErrorType.MissingCheckout);
         }
 
         const discounts: AffirmDiscount = {};
 
-        for (const line of cart.coupons) {
+        for (const line of order.coupons) {
             if (line.discountedAmountAsInteger > 0) {
                 discounts[line.code] = {
                     discount_amount: line.discountedAmountAsInteger,
@@ -272,13 +273,12 @@ export default class AffirmPaymentStrategy implements PaymentStrategy {
                 };
             }
         }
-        for (const line of cart.discounts) {
-            if (line.discountedAmountAsInteger > 0) {
-                discounts[line.id] = {
-                    discount_amount: line.discountedAmountAsInteger,
-                    discount_display_name: line.id,
-                };
-            }
+
+        if (order.discountAmountAsInteger > 0) {
+            discounts['discountTotal'] = {
+                discount_amount: order.discountAmountAsInteger,
+                discount_display_name: 'discount',
+            };
         }
 
         return discounts;

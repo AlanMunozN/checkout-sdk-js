@@ -22,6 +22,7 @@ export function getOrder(): Order {
         customerCanBeCreated: true,
         customerId: 0,
         discountAmount: 10,
+        discountAmountAsInteger: 10,
         hasDigitalItems: false,
         isComplete: true,
         status: 'ORDER_STATUS_AWAITING_FULFILLMENT',
