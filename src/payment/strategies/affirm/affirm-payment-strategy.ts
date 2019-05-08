@@ -275,7 +275,7 @@ export default class AffirmPaymentStrategy implements PaymentStrategy {
         }
 
         if (order.discountAmountAsInteger > 0) {
-            discounts['discountTotal'] = {
+            discounts.discounts = {
                 discount_amount: order.discountAmountAsInteger,
                 discount_display_name: 'discount',
             };
