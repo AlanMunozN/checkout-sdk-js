@@ -53,15 +53,15 @@ export interface AffirmRequestData {
         platform_affirm?: string,
     };
     order_id?: string;
-    shipping_amount?: number;
-    tax_amount?: number;
-    total?: number;
+    shipping_amount: number;
+    tax_amount: number;
+    total: number;
 }
 
 export interface AffirmItem {
     display_name: string;
     sku: string;
-    unit_price?: number;
+    unit_price: number;
     qty: number;
     item_image_url: string;
     item_url: string;
@@ -70,7 +70,7 @@ export interface AffirmItem {
 
 export interface AffirmDiscount {
     [key: string]: {
-        discount_amount?: number,
+        discount_amount: number,
         discount_display_name: string,
     };
 }

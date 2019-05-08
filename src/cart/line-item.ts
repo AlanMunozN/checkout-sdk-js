@@ -16,7 +16,7 @@ export interface DigitalItem extends LineItem {
 export interface CustomItem {
     id: string;
     listPrice: number;
-    listPriceAsInteger?: number;
+    listPriceAsInteger: number;
     extendedListPrice: number;
     name: string;
     quantity: number;
@@ -28,7 +28,7 @@ export interface GiftCertificateItem {
     name: string;
     theme: string;
     amount: number;
-    amountAsInteger?: number;
+    amountAsInteger: number;
     taxable: boolean;
     sender: {
         name: string;
@@ -58,7 +58,7 @@ export interface LineItem {
     couponAmount: number;
     listPrice: number;
     salePrice: number;
-    salePriceAsInteger?: number;
+    salePriceAsInteger: number;
     extendedListPrice: number;
     extendedSalePrice: number;
     socialMedia?: LineItemSocialData[];

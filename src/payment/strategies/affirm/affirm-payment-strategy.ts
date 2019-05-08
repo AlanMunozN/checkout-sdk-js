@@ -265,7 +265,7 @@ export default class AffirmPaymentStrategy implements PaymentStrategy {
         const discounts: AffirmDiscount = {};
 
         for (const line of cart.coupons) {
-            if (line.discountedAmountAsInteger && line.discountedAmountAsInteger > 0) {
+            if (line.discountedAmountAsInteger > 0) {
                 discounts[line.code] = {
                     discount_amount: line.discountedAmountAsInteger,
                     discount_display_name: line.displayName,
@@ -273,7 +273,7 @@ export default class AffirmPaymentStrategy implements PaymentStrategy {
             }
         }
         for (const line of cart.discounts) {
-            if (line.discountedAmountAsInteger && line.discountedAmountAsInteger > 0) {
+            if (line.discountedAmountAsInteger > 0) {
                 discounts[line.id] = {
                     discount_amount: line.discountedAmountAsInteger,
                     discount_display_name: line.id,

@@ -4,5 +4,5 @@ export default interface Coupon {
     code: string;
     couponType: string;
     discountedAmount: number;
-    discountedAmountAsInteger?: number;
+    discountedAmountAsInteger: number;
 }
