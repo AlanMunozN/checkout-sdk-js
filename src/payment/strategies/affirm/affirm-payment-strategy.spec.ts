@@ -201,7 +201,7 @@ describe('AffirmPaymentStrategy', () => {
 
             return expect(strategy.execute(payload)).rejects.toThrow(MissingDataError);
         });
-        
+
         it('does not create affirm object if order does not exist', () => {
             jest.spyOn(store.getState().order, 'getOrder').mockReturnValue(undefined);
 
