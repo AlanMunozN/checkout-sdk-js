@@ -2115,6 +2115,7 @@ declare interface Coupon {
     code: string;
     couponType: string;
     discountedAmount: number;
+    discountedAmountAsInteger: number;
 }
 
 declare interface CreditCardInstrument {
@@ -2157,6 +2158,7 @@ declare interface CustomError extends Error {
 declare interface CustomItem {
     id: string;
     listPrice: number;
+    listPriceAsInteger: number;
     extendedListPrice: number;
     name: string;
     quantity: number;
@@ -2246,6 +2248,7 @@ declare interface DigitalItem extends LineItem {
 declare interface Discount {
     id: string;
     discountedAmount: number;
+    discountedAmountAsInteger: number;
 }
 
 declare class EmbeddedCheckout {
@@ -2417,6 +2420,7 @@ declare interface GiftCertificateItem {
     name: string;
     theme: string;
     amount: number;
+    amountAsInteger: number;
     taxable: boolean;
     sender: {
         name: string;
@@ -2642,6 +2646,7 @@ declare interface LineItem {
     couponAmount: number;
     listPrice: number;
     salePrice: number;
+    salePriceAsInteger: number;
     extendedListPrice: number;
     extendedSalePrice: number;
     socialMedia?: LineItemSocialData[];
@@ -2718,6 +2723,7 @@ declare interface Order {
     customerId: number;
     customerMessage: string;
     discountAmount: number;
+    discountAmountAsInteger: number;
     hasDigitalItems: boolean;
     isComplete: boolean;
     isDownloadable: boolean;
@@ -2727,10 +2733,12 @@ declare interface Order {
     orderAmountAsInteger: number;
     orderId: number;
     shippingCostTotal: number;
+    shippingCostTotalAsInteger: number;
     shippingCostBeforeDiscount: number;
     handlingCostTotal: number;
     taxes: Tax[];
     taxTotal: number;
+    taxTotalAsInteger: number;
     payments?: OrderPayments;
     status: string;
 }
