@@ -126,17 +126,19 @@ export default class AffirmPaymentStrategy implements PaymentStrategy {
             shipping: this._getShippingAddress(),
             billing: this._getBillingAddress(),
             items: this._getItems(),
-            discounts: this._getDiscounts(),
             metadata: {
                 shipping_type: consignment.selectedShippingOption.type,
                 mode: 'modal',
+                platform_type: 'BigCommerce',
+                platform_version: '',
+                platform_affirm: '',
             },
+            discounts: this._getDiscounts(),
             order_id: order.orderId ? order.orderId.toString() : '',
-            shipping_amount: order.shippingCostTotal * 100,
-            tax_amount: order.taxTotal * 100,
-            total: order.orderAmount * 100,
+            shipping_amount: order.shippingCostTotalAsInteger,
+            tax_amount: order.taxTotalAsInteger,
+            total: order.orderAmountAsInteger,
         };
-
     }
 
     private _getBillingAddress(): AffirmAddress {
@@ -198,41 +200,42 @@ export default class AffirmPaymentStrategy implements PaymentStrategy {
 
     private _getItems(): AffirmItem[] {
         const state = this._store.getState();
-        const cart = state.cart.getCart();
+        const order = state.order.getOrder();
 
-        if (!cart) {
-            throw new MissingDataError(MissingDataErrorType.MissingCart);
+        if (!order) {
+            throw new MissingDataError(MissingDataErrorType.MissingCheckout);
         }
+
         const items: AffirmItem[] = [];
 
-        for (const item of cart.lineItems.physicalItems) {
+        for (const item of order.lineItems.physicalItems) {
             items.push({
                 display_name: item.name,
                 sku: item.sku,
-                unit_price: item.salePrice,
+                unit_price: item.salePriceAsInteger,
                 qty: item.quantity,
                 item_image_url: item.imageUrl,
                 item_url: item.url,
             });
         }
 
-        for (const item of cart.lineItems.digitalItems) {
+        for (const item of order.lineItems.digitalItems) {
             items.push({
                 display_name: item.name,
                 sku: item.sku,
-                unit_price: item.salePrice,
+                unit_price: item.salePriceAsInteger,
                 qty: item.quantity,
                 item_image_url: item.imageUrl,
                 item_url: item.url,
             });
         }
 
-        if (cart.lineItems.customItems) {
-            for (const item of cart.lineItems.customItems) {
+        if (order.lineItems.customItems) {
+            for (const item of order.lineItems.customItems) {
                 items.push({
                     display_name: item.name,
                     sku: item.sku,
-                    unit_price: item.listPrice,
+                    unit_price: item.listPriceAsInteger,
                     qty: item.quantity,
                     item_image_url: '',
                     item_url: '',
@@ -240,11 +243,11 @@ export default class AffirmPaymentStrategy implements PaymentStrategy {
             }
         }
 
-        for (const item of cart.lineItems.giftCertificates) {
+        for (const item of order.lineItems.giftCertificates) {
             items.push({
                 display_name: item.name,
                 sku: '',
-                unit_price: item.amount,
+                unit_price: item.amountAsInteger,
                 qty: 1,
                 item_image_url: '',
                 item_url: '',
@@ -256,23 +259,27 @@ export default class AffirmPaymentStrategy implements PaymentStrategy {
 
     private _getDiscounts(): AffirmDiscount {
         const state = this._store.getState();
-        const cart = state.cart.getCart();
+        const order = state.order.getOrder();
 
-        if (!cart) {
-            throw new MissingDataError(MissingDataErrorType.MissingCart);
+        if (!order) {
+            throw new MissingDataError(MissingDataErrorType.MissingCheckout);
         }
 
         const discounts: AffirmDiscount = {};
-        for (const line of cart.coupons) {
-            discounts[line.code] = {
-                discount_amount: line.discountedAmount,
-                discount_display_name: line.displayName,
-            };
+
+        for (const line of order.coupons) {
+            if (line.discountedAmountAsInteger > 0) {
+                discounts[line.code] = {
+                    discount_amount: line.discountedAmountAsInteger,
+                    discount_display_name: line.displayName,
+                };
+            }
         }
-        for (const line of cart.discounts) {
-            discounts[line.id] = {
-                discount_amount: line.discountedAmount,
-                discount_display_name: line.id,
+
+        if (order.discountAmountAsInteger > 0) {
+            discounts.discounts = {
+                discount_amount: order.discountAmountAsInteger,
+                discount_display_name: 'discount',
             };
         }
 

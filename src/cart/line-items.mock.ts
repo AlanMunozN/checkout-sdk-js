@@ -17,6 +17,7 @@ export function getPhysicalItem(): PhysicalItem {
         couponAmount: 0,
         listPrice: 200,
         salePrice: 200,
+        salePriceAsInteger: 20000,
         extendedListPrice: 200,
         extendedSalePrice: 200,
         isShippingRequired: true,
@@ -50,6 +51,7 @@ export function getDigitalItem(): DigitalItem {
         couponAmount: 0,
         listPrice: 200,
         salePrice: 200,
+        salePriceAsInteger: 20000,
         downloadPageUrl: 'url.php',
         downloadFileUrls: [],
         downloadSize: '',
@@ -74,6 +76,7 @@ export function getGiftCertificateItem(): GiftCertificateItem {
         name: '$100 Gift Certificate',
         message: 'message',
         amount: 100,
+        amountAsInteger: 10000,
         taxable: false,
         theme: 'General',
         sender: {

@@ -14,6 +14,7 @@ export default interface Order {
     customerId: number;
     customerMessage: string;
     discountAmount: number;
+    discountAmountAsInteger: number;
     hasDigitalItems: boolean;
     isComplete: boolean;
     isDownloadable: boolean;
@@ -23,10 +24,12 @@ export default interface Order {
     orderAmountAsInteger: number;
     orderId: number;
     shippingCostTotal: number;
+    shippingCostTotalAsInteger: number;
     shippingCostBeforeDiscount: number;
     handlingCostTotal: number;
     taxes: Tax[];
     taxTotal: number;
+    taxTotalAsInteger: number;
     payments?: OrderPayments;
     status: string;
 }
