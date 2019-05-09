@@ -129,7 +129,9 @@ export default class AffirmPaymentStrategy implements PaymentStrategy {
             metadata: {
                 shipping_type: consignment.selectedShippingOption.type,
                 mode: 'modal',
-                platform_type: 'bigcommerce',
+                platform_type: 'BigCommerce',
+                platform_version: '',
+                platform_affirm: '',
             },
             discounts: this._getDiscounts(),
             order_id: order.orderId ? order.orderId.toString() : '',

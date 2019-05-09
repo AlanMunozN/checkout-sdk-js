@@ -7,7 +7,7 @@ export function getCoupon(): Coupon {
         displayName: '20% off each item',
         couponType: 'percentage_discount',
         discountedAmount: 5,
-        discountedAmountAsInteger: 5,
+        discountedAmountAsInteger: 500,
         id: '1',
     };
 }
@@ -18,7 +18,7 @@ export function getShippingCoupon(): Coupon {
         displayName: '$5.00 off the shipping total',
         couponType: 'shipping_discount',
         discountedAmount: 5,
-        discountedAmountAsInteger: 5,
+        discountedAmountAsInteger: 500,
         id: '4',
     };
 }
