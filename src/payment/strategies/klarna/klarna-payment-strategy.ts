@@ -19,6 +19,7 @@ export default class KlarnaPaymentStrategy implements PaymentStrategy {
     private _klarnaCredit?: KlarnaCredit;
     private _unsubscribe?: (() => void);
     private _supportedEUCountries = ['AT', 'DE', 'DK', 'FI', 'GB', 'NL', 'NO', 'SE', 'CH'];
+    private _supportedOCCountries = ['AU', 'NZ'];
 
     constructor(
         private _store: CheckoutStore,
@@ -115,7 +116,7 @@ export default class KlarnaPaymentStrategy implements PaymentStrategy {
     }
 
     private _getUpdateSessionData(billingAddress: BillingAddress, shippingAddress?: Address): KlarnaUpdateSessionParams {
-        if (!includes(this._supportedEUCountries, billingAddress.countryCode)) {
+        if (!includes(this._supportedEUCountries, billingAddress.countryCode) && !includes(this._supportedOCCountries, billingAddress.countryCode)) {
             return {};
         }
 
@@ -130,6 +131,10 @@ export default class KlarnaPaymentStrategy implements PaymentStrategy {
         return data;
     }
 
+    private _needsStateCode(countryCode: string) {
+        return includes(this._supportedOCCountries, countryCode);
+    }
+
     private _mapToKlarnaAddress(address: Address, email?: string): KlarnaAddress {
         const klarnaAddress: KlarnaAddress = {
             street_address: address.address1,
@@ -138,7 +143,7 @@ export default class KlarnaPaymentStrategy implements PaymentStrategy {
             given_name: address.firstName,
             family_name: address.lastName,
             postal_code: address.postalCode,
-            region: address.stateOrProvince,
+            region: this._needsStateCode(address.countryCode) ? address.stateOrProvinceCode : address.stateOrProvince,
             email,
         };
 

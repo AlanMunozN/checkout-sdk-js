@@ -6,7 +6,7 @@ import { of, Observable } from 'rxjs';
 
 import { createCheckoutStore, CheckoutRequestSender, CheckoutStore, CheckoutValidator } from '../../../checkout';
 import { getCheckoutStoreState } from '../../../checkout/checkouts.mock';
-import { MissingDataError } from '../../../common/error/errors';
+import { MissingDataError, NotInitializedError } from '../../../common/error/errors';
 import { OrderActionCreator, OrderActionType, OrderRequestBody, OrderRequestSender } from '../../../order';
 import { OrderFinalizationNotRequiredError } from '../../../order/errors';
 import { getOrderRequestBody } from '../../../order/internal-orders.mock';
@@ -21,7 +21,7 @@ import { getKlarna } from '../../payment-methods.mock';
 import KlarnaCredit from './klarna-credit';
 import KlarnaPaymentStrategy from './klarna-payment-strategy';
 import KlarnaScriptLoader from './klarna-script-loader';
-import { getEUBillingAddress, getEUBillingAddressWithNoPhone, getKlarnaUpdateSessionParams, getKlarnaUpdateSessionParamsPhone } from './klarna.mock';
+import { getEUBillingAddress, getEUBillingAddressWithNoPhone, getKlarnaUpdateSessionParams, getKlarnaUpdateSessionParamsForOC, getKlarnaUpdateSessionParamsPhone, getMXBillingAddress, getOCBillingAddress } from './klarna.mock';
 
 describe('KlarnaPaymentStrategy', () => {
     let initializePaymentAction: Observable<Action>;
@@ -160,6 +160,46 @@ describe('KlarnaPaymentStrategy', () => {
 
             expect(klarnaCredit.authorize)
                 .toHaveBeenCalledWith(getKlarnaUpdateSessionParamsPhone(), expect.any(Function));
+        });
+
+        it('loads widget in OC', async () => {
+            store = store = createCheckoutStore({
+                ...getCheckoutStoreState(),
+                billingAddress: { data: getOCBillingAddress(), errors: {}, statuses: {} },
+            });
+            strategy = new KlarnaPaymentStrategy(
+                store,
+                orderActionCreator,
+                paymentMethodActionCreator,
+                remoteCheckoutActionCreator,
+                scriptLoader
+            );
+            jest.spyOn(store, 'dispatch').mockReturnValue(Promise.resolve(store.getState()));
+            jest.spyOn(store.getState().paymentMethods, 'getPaymentMethod').mockReturnValue(paymentMethodMock);
+
+            await strategy.initialize({ methodId: paymentMethod.id, klarna: { container: '#container' } });
+            strategy.execute(payload);
+
+            expect(klarnaCredit.authorize)
+                .toHaveBeenCalledWith(getKlarnaUpdateSessionParamsForOC(), expect.any(Function));
+        });
+
+        it('throws error if billing address is not supported', () => {
+            store = store = createCheckoutStore({
+                ...getCheckoutStoreState(),
+                billingAddress: { data: getMXBillingAddress(), errors: {}, statuses: {} },
+            });
+            strategy = new KlarnaPaymentStrategy(
+                store,
+                orderActionCreator,
+                paymentMethodActionCreator,
+                remoteCheckoutActionCreator,
+                scriptLoader
+            );
+
+            strategy.initialize({ methodId: paymentMethod.id, klarna: { container: '#container' } });
+
+            return expect(strategy.execute(payload)).rejects.toThrow(NotInitializedError);
         });
 
         it('loads widget in EU with no phone', async () => {
