@@ -14,7 +14,7 @@ export type PaymentInstrument = (
     CreditCardInstrument |
     CreditCardInstrument & WithHostedFormNonce |
     CryptogramInstrument |
-    FormattedPayload<AdyenV2Instrument | PaypalInstrument | FormattedHostedInstrument | FormattedVaultedInstrument> |
+    FormattedPayload<AdyenV2Instrument | PaypalInstrument | FormattedHostedInstrument | FormattedVaultedInstrument | StripeV3Intent> |
     HostedInstrument |
     NonceInstrument |
     ThreeDSVaultedInstrument |
@@ -127,6 +127,13 @@ interface AdyenV2Card {
         token: string;
     };
     bigpay_token?: void;
+}
+
+interface StripeV3Intent {
+    credit_card_token: {
+        token: string;
+    };
+    confirm: boolean;
 }
 
 export interface FormattedHostedInstrument {
