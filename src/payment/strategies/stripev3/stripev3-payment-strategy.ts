@@ -486,23 +486,4 @@ export default class StripeV3PaymentStrategy implements PaymentStrategy {
             this._stripeElement = undefined;
         }
     }
-
-    /*private async _createPaymentMethod(type: StripePaymentMethodType, card: StripeElement): Promise<{paymentMethod?: StripePaymentMethod; error?: StripeError}> {
-        let error: StripeError | undefined;
-        let paymentMethod: StripePaymentMethod | undefined;
-
-        return new Promise(async (resolve, reject) => {
-            const customer = this._store.getState().customer.getCustomer();
-            const billingAddress = this._store.getState().billingAddress.getBillingAddress();
-            const billingDetails = this._mapStripeBillingDetails(billingAddress, customer);
-
-            ({error, paymentMethod} = await this._getStripeJs().createPaymentMethod({type, card, billing_details: billingDetails}));
-
-            if (error) {
-                reject(error);
-            }
-
-            resolve(paymentMethod);
-        });
-    }*/
 }
