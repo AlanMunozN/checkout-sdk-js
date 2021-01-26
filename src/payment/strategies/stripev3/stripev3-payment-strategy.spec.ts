@@ -252,7 +252,15 @@ describe('StripeV3PaymentStrategy', () => {
                 expect(paymentActionCreator.submitPayment).toHaveBeenCalledWith(
                     expect.objectContaining({
                         paymentData: expect.objectContaining({
-                            shouldSetAsDefaultInstrument: true,
+                            formattedPayload: {
+                                bigpay_token: {
+                                    token: 'token',
+                                },
+                                confirm: false,
+                                credit_card_number_confirmation: undefined,
+                                set_as_default_stored_instrument: true,
+                                verification_value: undefined,
+                            },
                         }),
                     })
                 );

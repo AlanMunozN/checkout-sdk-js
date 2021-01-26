@@ -74,7 +74,22 @@ export default class StripeV3PaymentStrategy implements PaymentStrategy {
 
         if (isVaultedInstrument(paymentData)) {
             try {
-                return await this._store.dispatch(this._paymentActionCreator.submitPayment({...payment, paymentData}));
+                paymentPayload = {
+                    methodId,
+                    paymentData: {
+                        formattedPayload: {
+                            bigpay_token: {
+                                token: paymentData.instrumentId,
+                            },
+                            credit_card_number_confirmation: paymentData.ccNumber,
+                            verification_value: paymentData.ccCvv,
+                            set_as_default_stored_instrument: shouldSetAsDefaultInstrument,
+                            confirm: false,
+                        },
+                    },
+                };
+
+                return await this._store.dispatch(this._paymentActionCreator.submitPayment(paymentPayload));
             } catch (paymentError) {
                 const isThreeDSecureRequiredError = paymentError instanceof RequestError &&
                     some(paymentError.body.errors, { code: 'three_d_secure_required' });
@@ -115,10 +130,14 @@ export default class StripeV3PaymentStrategy implements PaymentStrategy {
             paymentPayload = {
                 methodId,
                 paymentData: {
-                    ...paymentData,
-                    nonce: paymentResult.id,
-                    shouldSaveInstrument,
-                    shouldSetAsDefaultInstrument,
+                    formattedPayload: {
+                        credit_card_token: {
+                            token: paymentResult.id,
+                        },
+                        vault_payment_instrument: shouldSaveInstrument,
+                        set_as_default_stored_instrument: shouldSetAsDefaultInstrument,
+                        confirm: false,
+                    },
                 },
             };
         }
