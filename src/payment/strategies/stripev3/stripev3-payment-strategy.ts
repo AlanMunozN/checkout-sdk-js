@@ -83,9 +83,9 @@ export default class StripeV3PaymentStrategy implements PaymentStrategy {
                             },
                             credit_card_number_confirmation: paymentData.ccNumber,
                             verification_value: paymentData.ccCvv,
-                            set_as_default_stored_instrument: shouldSetAsDefaultInstrument,
                             confirm: false,
                         },
+                        shouldSetAsDefaultInstrument,
                     },
                 };
 
@@ -135,9 +135,9 @@ export default class StripeV3PaymentStrategy implements PaymentStrategy {
                             token: paymentResult.id,
                         },
                         vault_payment_instrument: shouldSaveInstrument,
-                        set_as_default_stored_instrument: shouldSetAsDefaultInstrument,
                         confirm: false,
                     },
+                    shouldSetAsDefaultInstrument,
                 },
             };
         }
@@ -175,25 +175,23 @@ export default class StripeV3PaymentStrategy implements PaymentStrategy {
             }
         }
 
-        if (isThreeDSecureRequiredError) {
-            if (error.body.three_ds_result) {
-                return this._confirmVaultedPayment(error.body.three_ds_result.token).then(paymentIntent => {
-                    const paymentPayload = {
-                        methodId,
-                        paymentData: {
-                            formattedPayload: {
-                                credit_card_token: {
-                                    token: paymentIntent.id,
-                                },
-                                confirm: true,
-                                vault_payment_instrument: shouldSaveInstrument,
+        if (isThreeDSecureRequiredError && error.body.three_ds_result) {
+            return this._confirmVaultedPayment(error.body.three_ds_result.token).then(paymentIntent => {
+                const paymentPayload = {
+                    methodId,
+                    paymentData: {
+                        formattedPayload: {
+                            credit_card_token: {
+                                token: paymentIntent.id,
                             },
+                            confirm: true,
+                            vault_payment_instrument: shouldSaveInstrument,
                         },
-                    };
+                    },
+                };
 
-                    return this._store.dispatch(this._paymentActionCreator.submitPayment(paymentPayload));
-                });
-            }
+                return this._store.dispatch(this._paymentActionCreator.submitPayment(paymentPayload));
+            });
         }
 
         return Promise.reject(error);

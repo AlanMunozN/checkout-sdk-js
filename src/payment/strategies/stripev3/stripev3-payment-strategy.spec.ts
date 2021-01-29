@@ -258,9 +258,9 @@ describe('StripeV3PaymentStrategy', () => {
                                 },
                                 confirm: false,
                                 credit_card_number_confirmation: undefined,
-                                set_as_default_stored_instrument: true,
                                 verification_value: undefined,
                             },
+                            shouldSetAsDefaultInstrument: true,
                         }),
                     })
                 );
