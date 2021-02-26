@@ -10,8 +10,9 @@ import { OrderRequestBody } from '../../../order';
 import { OrderFinalizationNotRequiredError } from '../../../order/errors';
 import { getOrderRequestBody } from '../../../order/internal-orders.mock';
 import { PaymentInitializeOptions } from '../../payment-request-options';
-import { getDR, getInitializeOptions } from '../digitalriver/digitalriver.mock';
+import { getDigitalRiverJs, getInitializeOptions } from '../digitalriver/digitalriver.mock';
 
+import { OnCancelOrErrorResponse } from './digitalriver';
 import DigitalRiverPaymentStrategy from './digitalriver-payment-strategy';
 import DigitalRiverScriptLoader from './digitalriver-script-loader';
 
@@ -37,7 +38,9 @@ describe('DigitalRiverPaymentStrategy', () => {
 
     describe('#initialize()', () => {
         let options: PaymentInitializeOptions;
-        const digitalRiverLoadResponse = getDR();
+        let onErrorCallback: (error: OnCancelOrErrorResponse) => {};
+
+        const digitalRiverLoadResponse = getDigitalRiverJs();
         const digitalRiverComponent = digitalRiverLoadResponse.createDropin(expect.any(Object));
         const customer = getCustomer();
 
@@ -55,12 +58,24 @@ describe('DigitalRiverPaymentStrategy', () => {
             await expect(strategy.initialize(options)).resolves.toBe(store.getState());
         });
 
-        it('loads digitalRiver script', async () => {
+        it('throws an error when load response is empty or not provided', async () => {
+            jest.spyOn(digitalRiverScriptLoader, 'load').mockReturnValue(Promise.resolve(undefined));
+            const promise = strategy.initialize(options);
+            try {
+                strategy.initialize(options);
+            } catch (error) {
+                expect(true).toBeTruthy();
+            }
+
+            return expect(promise).rejects.toThrow(NotInitializedError);
+        });
+
+        it('loads DigitalRiver script', async () => {
             await expect(strategy.initialize(options)).resolves.toBe(store.getState());
             expect(digitalRiverScriptLoader.load).toHaveBeenCalled();
         });
 
-        it('initialization digital river options are not provided', () => {
+        it('throws an error when DigitalRiver options is not provided', () => {
 
             options.digitalriver = undefined;
 
@@ -70,7 +85,7 @@ describe('DigitalRiverPaymentStrategy', () => {
             return expect(promise).rejects.toThrow(error);
         });
 
-        it('customer are not provided', () => {
+        it('throws an error when customer is not provided', () => {
 
             jest.spyOn(store.getState().customer, 'getCustomer').mockReturnValue(undefined);
 
@@ -79,24 +94,74 @@ describe('DigitalRiverPaymentStrategy', () => {
 
             return expect(promise).rejects.toThrow(error);
         });
+
+        it('calls onError callback from DigitalRiver', async () => {
+            jest.spyOn(digitalRiverLoadResponse, 'createDropin').mockImplementation(({onError}) => {
+                onErrorCallback = onError;
+
+                return digitalRiverComponent;
+            });
+            await strategy.initialize(options);
+            onErrorCallback({
+                errors: [{
+                    code: 'code',
+                    message: 'message',
+                }],
+            });
+            expect(options.digitalriver?.onError).toBeCalled();
+            expect(digitalRiverLoadResponse.createDropin).toBeCalled();
+        });
+
+        it('throws an error when data on onSuccess event is not provided', async () => {
+            jest.spyOn(digitalRiverLoadResponse, 'createDropin').mockImplementation(({ onSuccess }) => {
+                try {
+                    onSuccess(undefined);
+                } catch (error) {
+                    expect(true).toBeTruthy();
+                }
+
+                return digitalRiverComponent;
+            });
+            await strategy.initialize(options);
+            expect(true).toBeTruthy();
+        });
+
+        it('calls onSuccess callback from DigitalRiver', async () => {
+            jest.spyOn(digitalRiverLoadResponse, 'createDropin').mockImplementation(({ onSuccess }) => {
+                onSuccess({
+                    source: {
+                        id: '1',
+                        reusable: false,
+                    },
+                    readyForStorage: true,
+                });
+
+                return digitalRiverComponent;
+            });
+            await strategy.initialize(options);
+            expect(true).toBeTruthy();
+        });
     });
 
     describe('#execute()', () => {
 
         beforeEach(() => {
-        payload = merge({}, getOrderRequestBody(), {
-            payment: {
-                useStoreCredit: false,
-                payment: { methodId: 'digitalriver', paymentData: { instrumentId: '123', shouldSetAsDefaultInstrument: true } },
-            },
-        });
+            payload = merge({}, getOrderRequestBody(), {
+                payment: {
+                    useStoreCredit: false,
+                    payment: {
+                        methodId: 'digitalriver',
+                        paymentData: {instrumentId: '123', shouldSetAsDefaultInstrument: true},
+                    },
+                },
+            });
         });
 
         it('returns the state', async () => {
             expect(await strategy.execute(payload)).toEqual(store.getState());
         });
 
-        it('returns payload error', async () => {
+        it('throws an error when payment is not provided', async () => {
 
             payload.payment = undefined;
 

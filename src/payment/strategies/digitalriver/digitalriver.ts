@@ -59,22 +59,22 @@ export interface DigitalRiverDropInConfiguration {
     /**
      * The function called when the shopper has authorized payment and a payment source has been successfully created.
      */
-    onSuccess(data: OnSuccessResponse): void;
+    onSuccess?(data: OnSuccessResponse): void;
 
     /**
      * The function called when the shopper cancels the payment process before authorizing payment.
      */
-    onCancel(error: OnCancelOrErrorResponse): void;
+    onCancel?(error: OnCancelOrErrorResponse): void;
 
     /**
      * The function called when an error has occurred.
      */
-    onError(error: OnCancelOrErrorResponse): void;
+    onError?(error: OnCancelOrErrorResponse): void;
 
     /**
      * The function called when Drop-in is ready for user interaction.
      */
-    onReady(data: OnReadyResponse): void;
+    onReady?(data: OnReadyResponse): void;
 }
 
 export interface OnCancelOrErrorResponse {
@@ -86,7 +86,7 @@ export interface OnCancelOrErrorResponse {
      * Drop-in emits an event that identifies the cancelled payment method.
      * https://docs.digitalriver.com/digital-river-api/payment-integrations-1/drop-in/drop-in-integration-guide#oncancel
      */
-     errors: ErrorData[];
+    errors: ErrorData[];
 }
 
 export interface ErrorData {

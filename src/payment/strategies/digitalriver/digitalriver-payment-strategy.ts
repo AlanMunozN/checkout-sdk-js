@@ -6,7 +6,7 @@ import { OrderFinalizationNotRequiredError } from '../../../order/errors';
 import { PaymentInitializeOptions, PaymentRequestOptions } from '../../payment-request-options';
 import PaymentStrategy from '../payment-strategy';
 
-import DigitalRiverJS, { DigitalRiverDropIn, OnCancelOrErrorResponse, OnReadyResponse, OnSuccessResponse } from './digitalriver';
+import DigitalRiverJS, { DigitalRiverDropIn, OnCancelOrErrorResponse, OnSuccessResponse } from './digitalriver';
 import DigitalRiverPaymentInitializeOptions from './digitalriver-payment-initialize-options';
 import DigitalRiverScriptLoader from './digitalriver-script-loader';
 
@@ -49,12 +49,13 @@ export default class DigitalRiverPaymentStrategy implements PaymentStrategy {
                     country: billing.countryCode,
                 },
             },
-            onSuccess: this._onSuccessResponse,
-            onCancel: this._onCancelResponse,
+            onSuccess: (data?: OnSuccessResponse) => {
+                this._onSuccessResponse(data);
+            },
+
             onError: (error: OnCancelOrErrorResponse) => {
                 this._getDigitalRiverInitializeOptions().onError?.(new Error(this._getErrorMessage(error)));
             },
-            onReady: this._onReadyResponse,
         };
 
         this._digitalRiverJS = await this._digitalRiverScriptLoader.load('pk_test_8c539de00bf3492494c36b4673ab4bf5', 'en-US');
@@ -97,7 +98,7 @@ export default class DigitalRiverPaymentStrategy implements PaymentStrategy {
         return errors.map(e => 'code: ' + e.code + ' message: ' + e.message).join('\n');
     }
 
-    private _onSuccessResponse: (data: OnSuccessResponse) => void = data => {
+    private _onSuccessResponse(data?: OnSuccessResponse): void {
 
         if (!data || !this._submitFormEvent) {
             throw new InvalidArgumentError('Unable to initialize payment because success argument is not provided.');
@@ -121,21 +122,7 @@ export default class DigitalRiverPaymentStrategy implements PaymentStrategy {
         } ;
 
         this._submitFormEvent();
-    };
-
-    private _onCancelResponse: (data: OnCancelOrErrorResponse) => void = data => {
-
-        if (!data) {
-            throw new InvalidArgumentError('Unable to proceed because cancel data is not provided.');
-        }
-    };
-
-    private _onReadyResponse: (data: OnReadyResponse) => void = data => {
-
-        if (!data) {
-            throw new InvalidArgumentError('Unable to proceed because ready data is not provided.');
-        }
-    };
+    }
 
     private _getInitializeOptions(): PaymentInitializeOptions {
         if (!this._initializeOptions) {

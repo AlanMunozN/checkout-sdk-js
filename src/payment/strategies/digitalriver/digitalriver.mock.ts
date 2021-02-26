@@ -34,13 +34,3 @@ export function getInitializeOptions(): PaymentInitializeOptions {
         methodId: 'digitalriver',
     };
 }
-
-export function getDR(): DigitalRiverJS {
-    return {
-        createDropin: jest.fn(() => {
-            return {
-                mount: jest.fn(),
-            };
-        }),
-    };
-}
