@@ -254,7 +254,9 @@ export default function createPaymentStrategyRegistry(
     registry.register(PaymentStrategyType.DIGITALRIVER, () =>
         new DigitalRiverPaymentStrategy(
             store,
-            new DigitalRiverScriptLoader(scriptLoader, getStylesheetLoader())
+            new DigitalRiverScriptLoader(scriptLoader, getStylesheetLoader()),
+            paymentMethodActionCreator,
+            orderActionCreator
         )
     );
 

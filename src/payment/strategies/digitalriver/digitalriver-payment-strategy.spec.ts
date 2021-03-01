@@ -1,14 +1,19 @@
+import { Action, createAction } from '@bigcommerce/data-store';
 import { createScriptLoader, createStylesheetLoader } from '@bigcommerce/script-loader';
 import { merge } from 'lodash';
+import { Observable, of } from 'rxjs';
 
 import { getBillingAddress } from '../../../billing/billing-addresses.mock';
 import { createCheckoutStore, CheckoutStore } from '../../../checkout';
 import { getCheckoutStoreState } from '../../../checkout/checkouts.mock';
 import { InvalidArgumentError, NotInitializedError, NotInitializedErrorType } from '../../../common/error/errors';
 import { getCustomer } from '../../../customer/customers.mock';
-import { OrderRequestBody } from '../../../order';
+import { OrderActionCreator, OrderRequestBody } from '../../../order';
 import { OrderFinalizationNotRequiredError } from '../../../order/errors';
 import { getOrderRequestBody } from '../../../order/internal-orders.mock';
+import PaymentMethod from '../../payment-method';
+import PaymentMethodActionCreator from '../../payment-method-action-creator';
+import { PaymentMethodActionType } from '../../payment-method-actions';
 import { PaymentInitializeOptions } from '../../payment-request-options';
 import { getDigitalRiverJs, getInitializeOptions } from '../digitalriver/digitalriver.mock';
 
@@ -17,10 +22,14 @@ import DigitalRiverPaymentStrategy from './digitalriver-payment-strategy';
 import DigitalRiverScriptLoader from './digitalriver-script-loader';
 
 describe('DigitalRiverPaymentStrategy', () => {
+    let paymentMethodActionCreator: PaymentMethodActionCreator;
     let payload: OrderRequestBody;
     let store: CheckoutStore;
+    let loadPaymentMethodAction: Observable<Action>;
     let strategy: DigitalRiverPaymentStrategy;
     let digitalRiverScriptLoader: DigitalRiverScriptLoader;
+    let paymentMethodMock: PaymentMethod;
+    let orderActionCreator: OrderActionCreator;
 
     beforeEach(() => {
         const scriptLoader = createScriptLoader();
@@ -29,10 +38,15 @@ describe('DigitalRiverPaymentStrategy', () => {
         digitalRiverScriptLoader = new DigitalRiverScriptLoader(scriptLoader, stylesheetLoader);
         store = createCheckoutStore(getCheckoutStoreState());
         jest.spyOn(store, 'dispatch');
+        loadPaymentMethodAction = of(createAction(PaymentMethodActionType.LoadPaymentMethodSucceeded, paymentMethodMock, { methodId: paymentMethodMock.id }));
+        paymentMethodActionCreator = {} as PaymentMethodActionCreator;
+        paymentMethodActionCreator.loadPaymentMethod = jest.fn(() => loadPaymentMethodAction);
 
         strategy = new DigitalRiverPaymentStrategy(
             store,
-            digitalRiverScriptLoader
+            digitalRiverScriptLoader,
+            paymentMethodActionCreator,
+            orderActionCreator
         );
     });
 

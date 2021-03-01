@@ -1,12 +1,24 @@
 import { CheckoutStore, InternalCheckoutSelectors } from '../../../checkout';
-import { InvalidArgumentError, NotInitializedError, NotInitializedErrorType } from '../../../common/error/errors';
+import {
+    InvalidArgumentError,
+    MissingDataErrorType,
+    NotInitializedError,
+    NotInitializedErrorType
+} from '../../../common/error/errors';
+import MissingDataError from '../../../common/error/errors/missing-data-error';
 import { Customer } from '../../../customer';
-import { OrderRequestBody } from '../../../order';
+import { OrderActionCreator, OrderRequestBody } from '../../../order';
 import { OrderFinalizationNotRequiredError } from '../../../order/errors';
+import PaymentMethodActionCreator from '../../payment-method-action-creator';
 import { PaymentInitializeOptions, PaymentRequestOptions } from '../../payment-request-options';
 import PaymentStrategy from '../payment-strategy';
 
-import DigitalRiverJS, { DigitalRiverDropIn, OnCancelOrErrorResponse, OnSuccessResponse } from './digitalriver';
+import DigitalRiverJS, {
+    DigitalRiverDropIn,
+    DigitalRiverInitalizeToken,
+    OnCancelOrErrorResponse,
+    OnSuccessResponse
+} from './digitalriver';
 import DigitalRiverPaymentInitializeOptions from './digitalriver-payment-initialize-options';
 import DigitalRiverScriptLoader from './digitalriver-script-loader';
 
@@ -16,24 +28,34 @@ export default class DigitalRiverPaymentStrategy implements PaymentStrategy {
     private _initializeOptions?: PaymentInitializeOptions;
     private _submitFormEvent?: () => void;
     private _LoadSuccessResponse?: OnSuccessResponse;
+    private _digitalRiverCheckoutId?: string;
 
     constructor(
         private _store: CheckoutStore,
-        private _digitalRiverScriptLoader: DigitalRiverScriptLoader
+        private _digitalRiverScriptLoader: DigitalRiverScriptLoader,
+        private _paymentMethodActionCreator: PaymentMethodActionCreator,
+        private _orderActionCreator: OrderActionCreator
     ) {}
 
     async initialize(options: PaymentInitializeOptions): Promise<InternalCheckoutSelectors> {
         this._initializeOptions = options;
 
-        const state = this._store.getState();
-        const sessionId = 'd4b2617a-68d4-4040-bf94-257ee9ed16e3';
+        const state = await this._store.dispatch(this._paymentMethodActionCreator.loadPaymentMethod(this._getInitializeOptions().methodId));
+        const paymentMethod = state.paymentMethods.getPaymentMethodOrThrow(this._getInitializeOptions().methodId);
+
+        if (!paymentMethod.clientToken) {
+            throw new MissingDataError(MissingDataErrorType.MissingPaymentMethod);
+        }
+
+        const clienToken: DigitalRiverInitalizeToken = JSON.parse(paymentMethod.clientToken);
         const billing = state.billingAddress.getBillingAddressOrThrow();
         const customer = this._getCustomerOptions(state.customer.getCustomer());
+        this._digitalRiverCheckoutId = clienToken.checkoutId;
 
         this._submitFormEvent = this._getDigitalRiverInitializeOptions().submitForm;
 
         const configuration = {
-            sessionId,
+            sessionId: clienToken.sessionId,
             options: { ...this._getDigitalRiverInitializeOptions().configuration },
             billingAddress: {
                 firstName: billing.firstName,
@@ -58,7 +80,7 @@ export default class DigitalRiverPaymentStrategy implements PaymentStrategy {
             },
         };
 
-        this._digitalRiverJS = await this._digitalRiverScriptLoader.load('pk_test_8c539de00bf3492494c36b4673ab4bf5', 'en-US');
+        this._digitalRiverJS = await this._digitalRiverScriptLoader.load(paymentMethod.initializationData.publicKey, paymentMethod.initializationData.paymentLanguage);
         this._digitalRiverDropComponent = await this._getDigitalRiverJs().createDropin( configuration );
 
         await this._digitalRiverDropComponent.mount(this._getDigitalRiverInitializeOptions().container);
@@ -71,8 +93,12 @@ export default class DigitalRiverPaymentStrategy implements PaymentStrategy {
         return Promise.resolve(this._store.getState());
     }
 
-    execute(payload: OrderRequestBody, options?: PaymentRequestOptions): Promise<InternalCheckoutSelectors> {
-        if (!payload.payment || options || this._LoadSuccessResponse) {
+    async execute(orderRequest: OrderRequestBody, options?: PaymentRequestOptions): Promise<InternalCheckoutSelectors> {
+
+        const { payment, ...order } = orderRequest;
+        await this._store.dispatch(this._orderActionCreator.submitOrder(order, options));
+
+        if (!payment || !this._LoadSuccessResponse || !this._digitalRiverCheckoutId) {
             throw new InvalidArgumentError('Unable to proceed because payload payment argument is not provided.');
         }
 

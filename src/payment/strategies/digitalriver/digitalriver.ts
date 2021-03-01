@@ -218,3 +218,8 @@ export interface DigitalRiverElementClasses {
      */
     webkitAutofill?: string;
 }
+
+export interface DigitalRiverInitalizeToken {
+    sessionId: string;
+    checkoutId: string;
+}
