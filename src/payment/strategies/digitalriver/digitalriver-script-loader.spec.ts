@@ -20,14 +20,14 @@ describe('DigitalRiverScriptLoader', () => {
     });
 
     describe('#load()', () => {
-        const digitalriverjs = getDigitalRiverJs();
+        const digitalRiverJs = getDigitalRiverJs();
         const jsUrl = 'https://js.digitalriverws.com/v1/DigitalRiver.js';
         const cssUrl = 'https://js.digitalriverws.com/v1/css/DigitalRiver.css';
 
         beforeEach(() => {
             scriptLoader.loadScript = jest.fn(() => {
                 mockWindow.DigitalRiver = jest.fn(
-                    () => digitalriverjs
+                    () => digitalRiverJs
                 );
 
                 return Promise.resolve();

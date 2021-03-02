@@ -4,7 +4,7 @@ export default interface DigitalRiverPaymentInitializeOptions {
     /**
      * The ID of a container which the payment widget should insert into.
      */
-    container: string;
+    containerId: string;
     configuration: OptionsResponse;
 
     /**

@@ -1,11 +1,9 @@
 import { CheckoutStore, InternalCheckoutSelectors } from '../../../checkout';
-import {
-    InvalidArgumentError,
+import { InvalidArgumentError,
+    MissingDataError,
     MissingDataErrorType,
     NotInitializedError,
-    NotInitializedErrorType
-} from '../../../common/error/errors';
-import MissingDataError from '../../../common/error/errors/missing-data-error';
+    NotInitializedErrorType } from '../../../common/error/errors';
 import { Customer } from '../../../customer';
 import { OrderActionCreator, OrderRequestBody } from '../../../order';
 import { OrderFinalizationNotRequiredError } from '../../../order/errors';
@@ -13,12 +11,10 @@ import PaymentMethodActionCreator from '../../payment-method-action-creator';
 import { PaymentInitializeOptions, PaymentRequestOptions } from '../../payment-request-options';
 import PaymentStrategy from '../payment-strategy';
 
-import DigitalRiverJS, {
-    DigitalRiverDropIn,
-    DigitalRiverInitalizeToken,
-    OnCancelOrErrorResponse,
-    OnSuccessResponse
-} from './digitalriver';
+import DigitalRiverJS, { DigitalRiverDropIn,
+    DigitalRiverInitializeToken,
+    OnCancelOrErrorResponse, OnReadyResponse,
+    OnSuccessResponse } from './digitalriver';
 import DigitalRiverPaymentInitializeOptions from './digitalriver-payment-initialize-options';
 import DigitalRiverScriptLoader from './digitalriver-script-loader';
 
@@ -27,7 +23,7 @@ export default class DigitalRiverPaymentStrategy implements PaymentStrategy {
     private _digitalRiverDropComponent?: DigitalRiverDropIn;
     private _initializeOptions?: PaymentInitializeOptions;
     private _submitFormEvent?: () => void;
-    private _LoadSuccessResponse?: OnSuccessResponse;
+    private _loadSuccessResponse?: OnSuccessResponse;
     private _digitalRiverCheckoutId?: string;
 
     constructor(
@@ -42,25 +38,30 @@ export default class DigitalRiverPaymentStrategy implements PaymentStrategy {
 
         const state = await this._store.dispatch(this._paymentMethodActionCreator.loadPaymentMethod(this._getInitializeOptions().methodId));
         const paymentMethod = state.paymentMethods.getPaymentMethodOrThrow(this._getInitializeOptions().methodId);
+        let clientToken: DigitalRiverInitializeToken;
 
         if (!paymentMethod.clientToken) {
             throw new MissingDataError(MissingDataErrorType.MissingPaymentMethod);
         }
 
-        const clienToken: DigitalRiverInitalizeToken = JSON.parse(paymentMethod.clientToken);
+        try {
+            clientToken = JSON.parse(paymentMethod.clientToken);
+        } catch (error) {
+            throw new Error(error.message);
+        }
+
         const billing = state.billingAddress.getBillingAddressOrThrow();
         const customer = this._getCustomerOptions(state.customer.getCustomer());
-        this._digitalRiverCheckoutId = clienToken.checkoutId;
-
+        this._digitalRiverCheckoutId = clientToken.checkoutId;
         this._submitFormEvent = this._getDigitalRiverInitializeOptions().submitForm;
 
         const configuration = {
-            sessionId: clienToken.sessionId,
+            sessionId: clientToken.sessionId,
             options: { ...this._getDigitalRiverInitializeOptions().configuration },
             billingAddress: {
                 firstName: billing.firstName,
                 lastName: billing.lastName,
-                email: billing.email ? billing.email : customer.email,
+                email: billing.email || customer.email,
                 phoneNumber: billing.phone,
                 address: {
                     line1: billing.address1,
@@ -75,6 +76,10 @@ export default class DigitalRiverPaymentStrategy implements PaymentStrategy {
                 this._onSuccessResponse(data);
             },
 
+            onReady: (data?: OnReadyResponse) => {
+                this._onReadyResponse(data);
+            },
+
             onError: (error: OnCancelOrErrorResponse) => {
                 this._getDigitalRiverInitializeOptions().onError?.(new Error(this._getErrorMessage(error)));
             },
@@ -82,8 +87,7 @@ export default class DigitalRiverPaymentStrategy implements PaymentStrategy {
 
         this._digitalRiverJS = await this._digitalRiverScriptLoader.load(paymentMethod.initializationData.publicKey, paymentMethod.initializationData.paymentLanguage);
         this._digitalRiverDropComponent = await this._getDigitalRiverJs().createDropin( configuration );
-
-        await this._digitalRiverDropComponent.mount(this._getDigitalRiverInitializeOptions().container);
+        await this._digitalRiverDropComponent.mount(this._getDigitalRiverInitializeOptions().containerId);
 
         return state;
     }
@@ -94,11 +98,11 @@ export default class DigitalRiverPaymentStrategy implements PaymentStrategy {
     }
 
     async execute(orderRequest: OrderRequestBody, options?: PaymentRequestOptions): Promise<InternalCheckoutSelectors> {
-
         const { payment, ...order } = orderRequest;
+
         await this._store.dispatch(this._orderActionCreator.submitOrder(order, options));
 
-        if (!payment || !this._LoadSuccessResponse || !this._digitalRiverCheckoutId) {
+        if (!payment || !this._loadSuccessResponse || !this._digitalRiverCheckoutId) {
             throw new InvalidArgumentError('Unable to proceed because payload payment argument is not provided.');
         }
 
@@ -130,7 +134,7 @@ export default class DigitalRiverPaymentStrategy implements PaymentStrategy {
             throw new InvalidArgumentError('Unable to initialize payment because success argument is not provided.');
         }
 
-        this._LoadSuccessResponse = data.source.browserInfo ? {
+        this._loadSuccessResponse = data.source.browserInfo ? {
             source: {
                 id: data.source.id,
                 reusable: data.source.reusable,
@@ -148,6 +152,12 @@ export default class DigitalRiverPaymentStrategy implements PaymentStrategy {
         } ;
 
         this._submitFormEvent();
+    }
+
+    private _onReadyResponse(data?: OnReadyResponse): void {
+        if (data) {
+            this._getDigitalRiverInitializeOptions().onRenderButton?.();
+        }
     }
 
     private _getInitializeOptions(): PaymentInitializeOptions {

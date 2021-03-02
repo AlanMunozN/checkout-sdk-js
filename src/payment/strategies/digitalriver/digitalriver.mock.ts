@@ -1,6 +1,7 @@
+import PaymentMethod from '../../payment-method';
 import { PaymentInitializeOptions } from '../../payment-request-options';
 
-import DigitalRiverJS from './digitalriver';
+import DigitalRiverJS, { DigitalRiverInitializeToken } from './digitalriver';
 
 export function getDigitalRiverJs(): DigitalRiverJS {
     return {
@@ -15,7 +16,7 @@ export function getDigitalRiverJs(): DigitalRiverJS {
 export function getInitializeOptions(): PaymentInitializeOptions {
     return {
         digitalriver: {
-            container: 'drop-in',
+            containerId: 'drop-in',
             configuration: {
                 button: {
                     type: 'submitOrder',
@@ -32,5 +33,35 @@ export function getInitializeOptions(): PaymentInitializeOptions {
         },
         gatewayId: '',
         methodId: 'digitalriver',
+    };
+}
+
+export function getClientMock(): DigitalRiverInitializeToken {
+    return {
+        sessionId: '1234',
+        checkoutId: '12345676543',
+    };
+}
+
+export function getInitializationData() {
+    return {
+        publicKey: '1234',
+        paymentLanguage: 'en-us',
+    };
+
+}
+
+export function getPaymentMethod(): PaymentMethod {
+    return {
+        id: 'digitalriver',
+        logoUrl: '',
+        method: 'digitalriver',
+        supportedCards: [],
+        config: {
+            testMode: true,
+        },
+        initializationData: getInitializationData(),
+        type: 'PAYMENT_TYPE_API',
+        clientToken: 'clientToken',
     };
 }
