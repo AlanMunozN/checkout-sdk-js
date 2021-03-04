@@ -65,6 +65,7 @@ export default class DigitalRiverPaymentStrategy implements PaymentStrategy {
                     country: billing.countryCode,
                 },
             },
+            paymentMethodConfiguration: { ...this._getDigitalRiverInitializeOptions().configuration.paymentMethodConfiguration },
             onSuccess: (data?: OnSuccessResponse) => {
                 this._onSuccessResponse(data);
             },

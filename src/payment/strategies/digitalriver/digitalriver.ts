@@ -141,6 +141,8 @@ export interface OptionsResponse {
      * Use this option to show the required terms of sale disclosure. These localized terms automatically update if recurring products are purchased.
      */
     showTermsOfSaleDisclosure?: boolean;
+
+    paymentMethodConfiguration?: BaseElementOptions;
 }
 
 export interface ButtonResponse {
@@ -187,6 +189,8 @@ interface BaseElementOptions {
      * Set custom class names on the container DOM element when the Digital River element is in a particular state.
      */
     classes?: DigitalRiverElementClasses;
+
+    disabledPaymentMethods?: string[];
 }
 
 /**
