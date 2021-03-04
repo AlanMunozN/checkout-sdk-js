@@ -137,8 +137,9 @@ export default class DigitalRiverPaymentStrategy implements PaymentStrategy {
                 } ;
                 resolve(this._submitFormEvent());
             }
+
             reject(this._getDigitalRiverInitializeOptions().onError?.
-            (new InvalidArgumentError('Unable to initialize payment because success argument is not provided.')));
+                (new InvalidArgumentError('Unable to initialize payment because success argument is not provided.')));
         });
     }
 
@@ -149,7 +150,6 @@ export default class DigitalRiverPaymentStrategy implements PaymentStrategy {
     }
 
     private _getDigitalRiverInitializeOptions(): DigitalRiverPaymentInitializeOptions {
-
         if (!this._digitalRiverInitializeOptions) {
             throw new NotInitializedError(NotInitializedErrorType.PaymentNotInitialized);
         }

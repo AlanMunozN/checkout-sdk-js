@@ -5,6 +5,7 @@ export default interface DigitalRiverPaymentInitializeOptions {
      * The ID of a container which the Digital River drop in component should be mounted
      */
     containerId: string;
+
     /**
      * Create a Configuration object for Drop-in that contains both required and optional values.
      * https://docs.digitalriver.com/digital-river-api/payment-integrations-1/drop-in/drop-in-integration-guide#step-5-configure-hydrate

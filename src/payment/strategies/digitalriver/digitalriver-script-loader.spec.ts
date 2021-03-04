@@ -10,13 +10,13 @@ describe('DigitalRiverScriptLoader', () => {
     let digitalRiverScriptLoader: DigitalRiverScriptLoader;
     let scriptLoader: ScriptLoader;
     let stylesheetLoader: StylesheetLoader;
-    let mockWindow: DigitalRiverWindow;
+    let windowMock: DigitalRiverWindow;
 
     beforeEach(() => {
-        mockWindow = {} as DigitalRiverWindow;
+        windowMock = {} as DigitalRiverWindow;
         scriptLoader = {} as ScriptLoader;
         stylesheetLoader = {} as StylesheetLoader;
-        digitalRiverScriptLoader = new DigitalRiverScriptLoader(scriptLoader, stylesheetLoader, mockWindow);
+        digitalRiverScriptLoader = new DigitalRiverScriptLoader(scriptLoader, stylesheetLoader, windowMock);
     });
 
     describe('#load()', () => {
@@ -26,7 +26,7 @@ describe('DigitalRiverScriptLoader', () => {
 
         beforeEach(() => {
             scriptLoader.loadScript = jest.fn(() => {
-                mockWindow.DigitalRiver = jest.fn(
+                windowMock.DigitalRiver = jest.fn(
                     () => digitalRiverJs
                 );
 
@@ -49,16 +49,12 @@ describe('DigitalRiverScriptLoader', () => {
 
         it('throws an error when window is not set', async () => {
             scriptLoader.loadScript = jest.fn(() => {
-                mockWindow.DigitalRiver = undefined;
+                windowMock.DigitalRiver = undefined;
 
                 return Promise.resolve();
             });
 
-            try {
-                await digitalRiverScriptLoader.load('pk_test_fail', 'en-US');
-            } catch (error) {
-                expect(error).toBeInstanceOf(PaymentMethodClientUnavailableError);
-            }
+            return expect(digitalRiverScriptLoader.load('pk_test_fail', 'en-US')).rejects.toBeInstanceOf(PaymentMethodClientUnavailableError);
         });
     });
 });

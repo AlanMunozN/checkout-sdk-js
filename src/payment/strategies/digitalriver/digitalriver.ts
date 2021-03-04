@@ -33,6 +33,7 @@ export interface DigitalRiverDropInConfiguration {
      * The  payment session identifier returned by Digital River.
      */
     sessionId: string;
+
     /**
      * you can specify options to trigger different features or functionality
      */
@@ -50,6 +51,7 @@ export interface DigitalRiverDropInConfiguration {
             postalCode: string;
             country: string;
         };
+
         /**
          * Additional configuration details for configuration structure (classes, styles etc..)
          */
@@ -162,6 +164,7 @@ export interface OnSuccessResponse {
             browserIp?: string;
         };
     };
+
     /**
      * Indicates whether the source has been enabled for future use.
      * Important: If this value is true, it does not mean the customer can use this source multiple times.
@@ -197,22 +200,27 @@ export interface DigitalRiverElementClasses {
      * The Element is in its base state. The user either has not entered anything into the input field or is currently typing.
      */
     base?: string;
+
     /**
      * The Element is in its complete state. The user has input value, and it meets the basic validation requirements of that field.
      */
     complete?: string;
+
     /**
      * The Element is empty. The Element once had value but is now empty.
      */
     empty?: string;
+
     /**
      * The Element has focus.
      */
     focus?: string;
+
     /**
      * The Element has value, but it does not meet the basic validation requirements of the field.
      */
     invalid?: string;
+
     /**
      * A saved card stored in a browser automatically fills this element.
      */

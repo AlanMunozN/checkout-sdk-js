@@ -18,7 +18,7 @@ import { PaymentMethodActionType } from '../../payment-method-actions';
 import { PaymentInitializeOptions } from '../../payment-request-options';
 import { getClientMock, getDigitalRiverJSMock, getDigitalRiverPaymentMethodMock, getInitializeOptionsMock } from '../digitalriver/digitalriver.mock';
 
-import { OnCancelOrErrorResponse } from './digitalriver';
+import { OnCancelOrErrorResponse, OnSuccessResponse } from './digitalriver';
 import DigitalRiverPaymentStrategy from './digitalriver-payment-strategy';
 import DigitalRiverScriptLoader from './digitalriver-script-loader';
 
@@ -41,6 +41,7 @@ describe('DigitalRiverPaymentStrategy', () => {
         loadPaymentMethodAction = of(createAction(PaymentMethodActionType.LoadPaymentMethodSucceeded, paymentMethodMock, {methodId: paymentMethodMock.id}));
         paymentMethodActionCreator = {} as PaymentMethodActionCreator;
         paymentMethodActionCreator.loadPaymentMethod = jest.fn(() => loadPaymentMethodAction);
+        jest.spyOn(store, 'dispatch');
 
         orderActionCreator = new OrderActionCreator(
             new OrderRequestSender(createRequestSender()),
@@ -54,7 +55,6 @@ describe('DigitalRiverPaymentStrategy', () => {
             digitalRiverScriptLoader
         );
 
-        jest.spyOn(store, 'dispatch');
     });
 
     describe('#initialize()', () => {
@@ -63,7 +63,7 @@ describe('DigitalRiverPaymentStrategy', () => {
         const customer = getCustomer();
         let options: PaymentInitializeOptions;
         let onErrorCallback: (error: OnCancelOrErrorResponse) => {};
-        let onSuccessCallback: any;
+        let onSuccessCallback: (data?: OnSuccessResponse) => {};
 
         beforeEach(() => {
             jest.spyOn(store.getState().billingAddress, 'getBillingAddressOrThrow').mockReturnValue(getBillingAddress());
@@ -73,31 +73,31 @@ describe('DigitalRiverPaymentStrategy', () => {
             options = getInitializeOptionsMock();
         });
 
-        it('returns the state', async () => {
-
-            await expect(strategy.initialize(options)).resolves.toBe(store.getState());
+        it('returns the state', () => {
+            return expect(strategy.initialize(options)).resolves.toBe(store.getState());
         });
 
         it('loads DigitalRiver script', async () => {
-
             await expect(strategy.initialize(options)).resolves.toBe(store.getState());
+
             expect(digitalRiverScriptLoader.load).toHaveBeenCalled();
         });
 
         it('calls onSuccess callback from DigitalRiver', async () => {
             jest.spyOn(digitalRiverLoadResponse, 'createDropin').mockImplementation(({onSuccess}) => {
-                onSuccess({
-                    source: {
-                        id: '1',
-                        reusable: false,
-                    },
-                    readyForStorage: true,
-                });
+                onSuccessCallback = onSuccess;
 
                 return digitalRiverComponent;
             });
 
             await strategy.initialize(options);
+            onSuccessCallback({
+                source: {
+                    id: '1',
+                    reusable: false,
+                },
+                readyForStorage: true,
+            });
 
             expect(digitalRiverLoadResponse.createDropin).toBeCalled();
         });
@@ -195,6 +195,7 @@ describe('DigitalRiverPaymentStrategy', () => {
 
             await strategy.initialize(options);
             onSuccessCallback(undefined);
+
             expect(options.digitalriver?.onError).toBeCalled();
             expect(digitalRiverLoadResponse.createDropin).toBeCalled();
         });
@@ -203,6 +204,7 @@ describe('DigitalRiverPaymentStrategy', () => {
     describe('#execute()', () => {
         let submitOrderAction: Observable<SubmitOrderAction>;
         let options: PaymentInitializeOptions;
+        let onSuccessCallback: (data: OnSuccessResponse) => {};
         const digitalRiverLoadResponse = getDigitalRiverJSMock();
         const digitalRiverComponent = digitalRiverLoadResponse.createDropin(expect.any(Object));
 
@@ -229,18 +231,19 @@ describe('DigitalRiverPaymentStrategy', () => {
 
         it('returns the state', async () => {
             jest.spyOn(digitalRiverLoadResponse, 'createDropin').mockImplementation(({onSuccess}) => {
-                onSuccess({
-                    source: {
-                        id: '1',
-                        reusable: false,
-                    },
-                    readyForStorage: true,
-                });
+                onSuccessCallback = onSuccess;
 
                 return digitalRiverComponent;
             });
 
             await strategy.initialize(options);
+            onSuccessCallback({
+                source: {
+                    id: '1',
+                    reusable: false,
+                },
+                readyForStorage: true,
+            });
 
             expect(await strategy.execute(payload)).toEqual(store.getState());
         });
