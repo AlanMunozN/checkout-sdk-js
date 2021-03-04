@@ -3,7 +3,7 @@ import { PaymentInitializeOptions } from '../../payment-request-options';
 
 import DigitalRiverJS, { DigitalRiverInitializeToken } from './digitalriver';
 
-export function getDigitalRiverJs(): DigitalRiverJS {
+export function getDigitalRiverJSMock(): DigitalRiverJS {
     return {
         createDropin: jest.fn(() => {
             return {
@@ -13,7 +13,7 @@ export function getDigitalRiverJs(): DigitalRiverJS {
     };
 }
 
-export function getInitializeOptions(): PaymentInitializeOptions {
+export function getInitializeOptionsMock(): PaymentInitializeOptions {
     return {
         digitalriver: {
             containerId: 'drop-in',
@@ -43,15 +43,15 @@ export function getClientMock(): DigitalRiverInitializeToken {
     };
 }
 
-export function getInitializationData() {
+export function getDigitalRiverInitializationDataMock() {
     return {
         publicKey: '1234',
-        paymentLanguage: 'en-us',
+        paymentLanguage: 'en-US',
     };
 
 }
 
-export function getPaymentMethod(): PaymentMethod {
+export function getDigitalRiverPaymentMethodMock(): PaymentMethod {
     return {
         id: 'digitalriver',
         logoUrl: '',
@@ -60,7 +60,7 @@ export function getPaymentMethod(): PaymentMethod {
         config: {
             testMode: true,
         },
-        initializationData: getInitializationData(),
+        initializationData: getDigitalRiverInitializationDataMock(),
         type: 'PAYMENT_TYPE_API',
         clientToken: 'clientToken',
     };

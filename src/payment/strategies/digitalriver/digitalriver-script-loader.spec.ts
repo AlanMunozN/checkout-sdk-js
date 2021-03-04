@@ -4,7 +4,7 @@ import { PaymentMethodClientUnavailableError } from '../../errors';
 
 import { DigitalRiverWindow } from './digitalriver';
 import DigitalRiverScriptLoader from './digitalriver-script-loader';
-import { getDigitalRiverJs } from './digitalriver.mock';
+import { getDigitalRiverJSMock } from './digitalriver.mock';
 
 describe('DigitalRiverScriptLoader', () => {
     let digitalRiverScriptLoader: DigitalRiverScriptLoader;
@@ -20,7 +20,7 @@ describe('DigitalRiverScriptLoader', () => {
     });
 
     describe('#load()', () => {
-        const digitalRiverJs = getDigitalRiverJs();
+        const digitalRiverJs = getDigitalRiverJSMock();
         const jsUrl = 'https://js.digitalriverws.com/v1/DigitalRiver.js';
         const cssUrl = 'https://js.digitalriverws.com/v1/css/DigitalRiver.css';
 

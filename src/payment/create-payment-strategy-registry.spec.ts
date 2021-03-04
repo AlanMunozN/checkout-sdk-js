@@ -150,6 +150,7 @@ describe('CreatePaymentStrategyRegistry', () => {
 
     it('can instantiate digitalRiver', () => {
         const paymentStrategy = registry.get(PaymentStrategyType.DIGITALRIVER);
+
         expect(paymentStrategy).toBeInstanceOf(DigitalRiverPaymentStrategy);
     });
 

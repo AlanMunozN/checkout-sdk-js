@@ -1,6 +1,6 @@
 export interface DigitalRiverWindow extends Window {
     /**
-     * object to create an instance of the DigitalRiver object. This is called a Digital River publishable API key
+     * Object to create an instance of the DigitalRiver object. This is called a Digital River publishable API key
      * This function accepts an optional options object using the following format DigitalRiver(publishableApiKey{, options})
      * https://docs.digitalriver.com/digital-river-api/payment-integrations-1/digitalriver.js/reference/digital-river-publishable-api-key
      */
