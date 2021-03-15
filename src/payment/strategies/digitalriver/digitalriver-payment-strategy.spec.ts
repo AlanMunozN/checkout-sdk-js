@@ -1,3 +1,4 @@
+import { createClient as createPaymentClient } from '@bigcommerce/bigpay-client';
 import { createAction, Action } from '@bigcommerce/data-store';
 import { createRequestSender } from '@bigcommerce/request-sender';
 import { createScriptLoader, createStylesheetLoader } from '@bigcommerce/script-loader';
@@ -12,10 +13,15 @@ import { getCustomer } from '../../../customer/customers.mock';
 import { OrderActionCreator, OrderActionType, OrderRequestBody, OrderRequestSender, SubmitOrderAction } from '../../../order';
 import { OrderFinalizationNotRequiredError } from '../../../order/errors';
 import { getOrderRequestBody } from '../../../order/internal-orders.mock';
+import { createSpamProtection, PaymentHumanVerificationHandler } from '../../../spam-protection';
+import PaymentActionCreator from '../../payment-action-creator';
+import { PaymentActionType, SubmitPaymentAction } from '../../payment-actions';
 import PaymentMethod from '../../payment-method';
 import PaymentMethodActionCreator from '../../payment-method-action-creator';
 import { PaymentMethodActionType } from '../../payment-method-actions';
 import { PaymentInitializeOptions } from '../../payment-request-options';
+import PaymentRequestSender from '../../payment-request-sender';
+import PaymentRequestTransformer from '../../payment-request-transformer';
 import { getClientMock, getDigitalRiverJSMock, getDigitalRiverPaymentMethodMock, getInitializeOptionsMock } from '../digitalriver/digitalriver.mock';
 
 import { OnCancelOrErrorResponse, OnSuccessResponse } from './digitalriver';
@@ -31,10 +37,32 @@ describe('DigitalRiverPaymentStrategy', () => {
     let digitalRiverScriptLoader: DigitalRiverScriptLoader;
     let paymentMethodMock: PaymentMethod;
     let orderActionCreator: OrderActionCreator;
+    let orderRequestSender: OrderRequestSender;
+    let paymentActionCreator: PaymentActionCreator;
+    let submitOrderAction: Observable<SubmitOrderAction>;
+    let submitPaymentAction: Observable<SubmitPaymentAction>;
 
     beforeEach(() => {
         const scriptLoader = createScriptLoader();
         const stylesheetLoader = createStylesheetLoader();
+        submitOrderAction = of(createAction(OrderActionType.SubmitOrderRequested));
+        submitPaymentAction = of(createAction(PaymentActionType.SubmitPaymentRequested));
+        paymentActionCreator = new PaymentActionCreator(
+            new PaymentRequestSender(createPaymentClient()),
+            orderActionCreator,
+            new PaymentRequestTransformer(),
+            new PaymentHumanVerificationHandler(createSpamProtection(createScriptLoader()))
+        );
+        orderActionCreator = new OrderActionCreator(
+            orderRequestSender,
+            new CheckoutValidator(new CheckoutRequestSender(createRequestSender()))
+        );
+        orderRequestSender = new OrderRequestSender(createRequestSender());
+        orderActionCreator = new OrderActionCreator(
+            orderRequestSender,
+            new CheckoutValidator(new CheckoutRequestSender(createRequestSender()))
+        );
+
         paymentMethodMock = {...getDigitalRiverPaymentMethodMock(), clientToken: JSON.stringify(getClientMock())};
         digitalRiverScriptLoader = new DigitalRiverScriptLoader(scriptLoader, stylesheetLoader);
         store = createCheckoutStore(getCheckoutStoreState());
@@ -42,6 +70,12 @@ describe('DigitalRiverPaymentStrategy', () => {
         paymentMethodActionCreator = {} as PaymentMethodActionCreator;
         paymentMethodActionCreator.loadPaymentMethod = jest.fn(() => loadPaymentMethodAction);
         jest.spyOn(store, 'dispatch');
+
+        jest.spyOn(orderActionCreator, 'submitOrder')
+            .mockReturnValue(submitOrderAction);
+
+        jest.spyOn(paymentActionCreator, 'submitPayment')
+            .mockReturnValue(submitPaymentAction);
 
         orderActionCreator = new OrderActionCreator(
             new OrderRequestSender(createRequestSender()),
@@ -52,6 +86,7 @@ describe('DigitalRiverPaymentStrategy', () => {
             store,
             paymentMethodActionCreator,
             orderActionCreator,
+            paymentActionCreator,
             digitalRiverScriptLoader
         );
 
@@ -220,7 +255,7 @@ describe('DigitalRiverPaymentStrategy', () => {
             });
         });
 
-        it('returns the state', async () => {
+        it('creates the order and submit payment with credit card', async () => {
             jest.spyOn(digitalRiverLoadResponse, 'createDropin').mockImplementation(({onSuccess}) => {
                 onSuccessCallback = onSuccess;
 
@@ -237,6 +272,25 @@ describe('DigitalRiverPaymentStrategy', () => {
             });
 
             expect(await strategy.execute(payload)).toEqual(store.getState());
+            expect(orderActionCreator.submitOrder).toHaveBeenCalled();
+            expect(paymentMethodActionCreator.loadPaymentMethod).toHaveBeenCalled();
+            expect(await paymentActionCreator.submitPayment).toHaveBeenCalledWith(
+                {
+                    methodId: 'authorizenet',
+                    paymentData: {
+                        nonce: JSON.stringify({
+                            checkoutId: '12345676543',
+                            source: {
+                                source: {
+                                    id: '1',
+                                    reusable: false,
+                                },
+                                readyForStorage: true,
+                            },
+                        }),
+                    },
+                }
+            );
         });
 
         it('throws an error when payment is not provided', async () => {

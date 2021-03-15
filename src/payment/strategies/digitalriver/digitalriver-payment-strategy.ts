@@ -2,6 +2,7 @@ import { CheckoutStore, InternalCheckoutSelectors } from '../../../checkout';
 import { InvalidArgumentError, MissingDataError, MissingDataErrorType, NotInitializedError, NotInitializedErrorType } from '../../../common/error/errors';
 import { OrderActionCreator, OrderRequestBody } from '../../../order';
 import { OrderFinalizationNotRequiredError } from '../../../order/errors';
+import PaymentActionCreator from '../../payment-action-creator';
 import PaymentMethodActionCreator from '../../payment-method-action-creator';
 import { PaymentInitializeOptions, PaymentRequestOptions } from '../../payment-request-options';
 import PaymentStrategy from '../payment-strategy';
@@ -22,6 +23,7 @@ export default class DigitalRiverPaymentStrategy implements PaymentStrategy {
         private _store: CheckoutStore,
         private _paymentMethodActionCreator: PaymentMethodActionCreator,
         private _orderActionCreator: OrderActionCreator,
+        private _paymentActionCreator: PaymentActionCreator,
         private _digitalRiverScriptLoader: DigitalRiverScriptLoader
     ) {}
 
@@ -87,11 +89,21 @@ export default class DigitalRiverPaymentStrategy implements PaymentStrategy {
 
         await this._store.dispatch(this._orderActionCreator.submitOrder(order, options));
 
-        if (!payment || !this._loadSuccessResponse || !this._digitalRiverCheckoutId) {
+        if (!payment) {
             throw new InvalidArgumentError('Unable to proceed because payload payment argument is not provided.');
         }
 
-        return Promise.resolve(this._store.getState());
+        const paymentPayload = {
+            methodId: payment.methodId,
+            paymentData: {
+                nonce: JSON.stringify({
+                    checkoutId: this._digitalRiverCheckoutId,
+                    source: this._loadSuccessResponse,
+                }),
+            },
+        };
+
+        return await this._store.dispatch(this._paymentActionCreator.submitPayment(paymentPayload));
     }
 
     finalize(): Promise<InternalCheckoutSelectors> {
